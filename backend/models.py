@@ -1,22 +1,38 @@
 from flask_sqlalchemy import SQLAlchemy
-from flask_security import UserMixin
+from flask_security import UserMixin, RoleMixin
 from datetime import datetime, timezone
+import uuid
 
 db = SQLAlchemy()
+
+roles_users = db.Table(
+    "roles_users",
+    db.Column("user_id", db.Integer(), db.ForeignKey("user.id")),
+    db.Column("role_id", db.Integer(), db.ForeignKey("role.id")),
+)
+
+
+class Role(db.Model, RoleMixin):
+    id = db.Column(db.Integer(), primary_key=True)
+    name = db.Column(db.String(80), unique=True)
 
 
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(64), unique=True, nullable=False)  # email format
-    password = db.Column(db.String(128), nullable=False)
+    email = db.Column(db.String(64), unique=True, nullable=False)  # email format
+    password = db.Column(db.String(255), nullable=False)
     full_name = db.Column(db.String(100), nullable=False)
     qualification = db.Column(db.String(100), nullable=True)
     dob = db.Column(db.Date, nullable=False)
-
-    role = db.Column(db.String(20), default="student", nullable=False)
     active = db.Column(db.Boolean(), default=True)
+    fs_uniquifier = db.Column(
+        db.String(64), unique=True, nullable=False, default=lambda: str(uuid.uuid4())
+    )
     created_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
 
+    roles = db.relationship(
+        "Role", secondary=roles_users, backref=db.backref("users", lazy="dynamic")
+    )
     scores = db.relationship("Score", backref="user", lazy=True)
 
     def has_role(self, role):
