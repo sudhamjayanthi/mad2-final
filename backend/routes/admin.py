@@ -5,41 +5,6 @@ from datetime import datetime
 
 admin_bp = Blueprint("admin", __name__)
 
-"""
-Admin Routes:
-
-1. Subjects
-   - GET /api/admin/subjects - List all subjects
-   - POST /api/admin/subjects - Create new subject
-   - PUT /api/admin/subjects/<id> - Update subject
-   - DELETE /api/admin/subjects/<id> - Delete subject
-
-2. Chapters
-   - GET /api/admin/subjects/<subject_id>/chapters - List chapters
-   - POST /api/admin/subjects/<subject_id>/chapters - Create chapter
-   - PUT /api/admin/chapters/<id> - Update chapter
-   - DELETE /api/admin/chapters/<id> - Delete chapter
-
-3. Quizzes
-   - GET /api/admin/chapters/<chapter_id>/quizzes - List quizzes
-   - POST /api/admin/chapters/<chapter_id>/quizzes - Create quiz
-   - PUT /api/admin/quizzes/<id> - Update quiz
-   - DELETE /api/admin/quizzes/<id> - Delete quiz
-
-4. Questions
-   - GET /api/admin/quizzes/<quiz_id>/questions - List questions
-   - POST /api/admin/quizzes/<quiz_id>/questions - Create question
-   - PUT /api/admin/questions/<id> - Update question
-   - DELETE /api/admin/questions/<id> - Delete question
-
-5. User Management
-   - GET /api/admin/users - List all users
-   - PUT /api/admin/users/<id>/toggle-active - Enable/disable user access
-   - DELETE /api/admin/users/<id> - Delete user
-"""
-
-
-
 @admin_bp.route("/subjects", methods=["GET", "POST"])
 @admin_bp.route("/subjects/<int:id>", methods=["PUT", "DELETE"])
 @auth_required()

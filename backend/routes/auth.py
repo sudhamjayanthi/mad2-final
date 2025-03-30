@@ -6,30 +6,6 @@ from datetime import datetime
 
 auth_bp = Blueprint("auth", __name__)
 
-"""
-Authentication Routes:
-
-1. POST /api/auth/login
-   - Authenticates user/admin credentials
-   - Returns JWT token on success
-   - Returns appropriate error messages on failure
-
-2. POST /api/auth/register
-   - Registers new user with provided details
-   - Validates email uniqueness
-   - Creates user with 'student' role
-   - Returns success/error message
-
-3. POST /api/auth/logout
-   - Invalidates current session/token
-   - Requires authentication
-   - Returns success message
-
-4. GET /api/auth/me
-   - Returns current user's profile
-   - Requires authentication
-"""
-
 
 @auth_bp.route("/login", methods=["POST"])
 def login():

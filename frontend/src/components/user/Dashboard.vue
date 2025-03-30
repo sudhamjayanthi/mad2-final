@@ -150,13 +150,11 @@ export default {
 		},
 		async fetchDashboardData() {
 			try {
-				// Fetch dashboard statistics
 				const stats = await api.get("/dashboard/");
 				this.totalAttempts = stats.total_attempts;
 				this.averageScore = stats.average_score;
 				this.upcomingQuizzes = stats.available_quizzes;
 
-				// Fetch recent scores
 				const scores = await api.get("/user/scores");
 				this.recentScores = scores.slice(0, 5); // Show only last 5 attempts
 			} catch (error) {

@@ -6,35 +6,6 @@ import json
 
 user_bp = Blueprint("user", __name__)
 
-"""
-User Routes:
-
-1. Dashboard
-   - GET /api/user/dashboard
-     * Returns upcoming quizzes
-     * Returns recent scores
-     * Returns performance stats
-
-2. Quiz Taking
-   - GET /api/user/quizzes/upcoming
-     * Lists available quizzes with schedule
-   - GET /api/user/quizzes/<id>
-     * Get quiz details before starting
-   - POST /api/user/quizzes/<id>/start
-     * Start quiz attempt
-     * Returns questions
-   - POST /api/user/quizzes/<id>/submit
-     * Submit quiz answers
-     * Calculate and store score
-
-3. Scores & History
-   - GET /api/user/scores
-     * Get all quiz attempts and scores
-   - GET /api/user/scores/<quiz_id>
-     * Get specific quiz score and details
-"""
-
-
 @user_bp.route("/dashboard", methods=["GET"])
 @auth_required()
 def get_dashboard():
