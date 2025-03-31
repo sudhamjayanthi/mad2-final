@@ -1,7 +1,7 @@
 <template>
 	<div>
 		<div class="d-flex justify-content-between align-items-center mb-4">
-			<h3>Available Subjects</h3>
+			<h3>Quizzes</h3>
 			<div class="d-flex gap-2">
 				<div class="input-group">
 					<input
@@ -37,19 +37,30 @@
 								>
 									<div class="d-flex justify-content-between align-items-center">
 										<div>
-											<span class="fw-bold">Quiz</span>
+											<span class="fw-bold">QDS2025{{ quiz.id }}</span>
 											<small class="text-muted ms-2">
 												<i class="bi bi-clock me-1"></i>
 												Duration: {{ quiz.time_duration }}
 											</small>
 										</div>
-										<button
-											class="btn btn-primary btn-sm"
-											@click="startQuiz(quiz.id)"
-										>
-											<i class="bi bi-play-fill me-1"></i>
-											Take Quiz
-										</button>
+										<div class="d-flex gap-2">
+											<button
+												class="btn btn-outline-primary btn-sm"
+												@click="viewQuiz(quiz)"
+												data-bs-toggle="modal"
+												:data-bs-target="'#quizModal' + quiz.id"
+											>
+												<i class="bi bi-eye me-1"></i>
+												View
+											</button>
+											<button
+												class="btn btn-primary btn-sm"
+												@click="startQuiz(quiz.id)"
+											>
+												<i class="bi bi-play-fill me-1"></i>
+												Take Quiz
+											</button>
+										</div>
 									</div>
 								</div>
 								<div v-else class="list-group-item text-muted">
@@ -62,19 +73,34 @@
 				</div>
 			</div>
 		</div>
+
+		<quiz-details-modal
+			v-for="quiz in availableQuizzes"
+			:key="'modal' + quiz.id"
+			:quiz="quiz"
+			:modalId="'quizModal' + quiz.id"
+		/>
+		<Toast v-if="error" :message="error" type="error" @hidden="error = null" />
 	</div>
 </template>
 
 <script>
 import { api } from "@/utils/api";
+import QuizDetailsModal from "./QuizDetailsModal.vue";
+import Toast from "@/components/common/Toast.vue";
 
 export default {
 	name: "SubjectList",
+	components: {
+		QuizDetailsModal,
+		Toast,
+	},
 	data() {
 		return {
 			subjects: [],
 			availableQuizzes: [],
 			searchQuery: "",
+			error: null,
 		};
 	},
 	computed: {
@@ -98,7 +124,7 @@ export default {
 			const quizzes = await api.get("/user/quizzes/upcoming");
 			this.availableQuizzes = quizzes;
 		} catch (error) {
-			console.error("Error fetching data:", error);
+			this.error = error.response?.data?.error || "Failed to load quizzes";
 		}
 	},
 	methods: {
@@ -107,6 +133,9 @@ export default {
 		},
 		startQuiz(quizId) {
 			this.$router.push(`/user/quiz/${quizId}`);
+		},
+		viewQuiz(quiz) {
+			console.log("Viewing quiz:", quiz);
 		},
 	},
 };

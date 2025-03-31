@@ -5,6 +5,7 @@ from datetime import datetime
 
 admin_bp = Blueprint("admin", __name__)
 
+
 @admin_bp.route("/subjects", methods=["GET", "POST"])
 @admin_bp.route("/subjects/<int:id>", methods=["PUT", "DELETE"])
 @auth_required()
@@ -57,7 +58,6 @@ def manage_subjects(id=None):
             ), 400
 
 
-
 @admin_bp.route("/subjects/<int:subject_id>/chapters", methods=["GET", "POST"])
 @admin_bp.route("/chapters/<int:id>", methods=["PUT", "DELETE"])
 @auth_required()
@@ -81,7 +81,6 @@ def manage_chapters(subject_id=None, id=None):
         if not data or "name" not in data:
             return jsonify({"error": "Name is required"}), 400
 
-        
         subject = Subject.query.get_or_404(subject_id)
 
         chapter = Chapter(name=data["name"], subject_id=subject_id)
@@ -132,7 +131,6 @@ def manage_chapters(subject_id=None, id=None):
             ), 400
 
 
-
 @admin_bp.route("/chapters/<int:chapter_id>/quizzes", methods=["GET", "POST"])
 @admin_bp.route("/quizzes/<int:id>", methods=["PUT", "DELETE"])
 @auth_required()
@@ -160,7 +158,6 @@ def manage_quizzes(chapter_id=None, id=None):
                 {"error": "Date of quiz and time duration are required"}
             ), 400
 
-        
         chapter = Chapter.query.get_or_404(chapter_id)
 
         try:
@@ -229,7 +226,6 @@ def manage_quizzes(chapter_id=None, id=None):
             ), 400
 
 
-
 @admin_bp.route("/quizzes/<int:quiz_id>/questions", methods=["GET", "POST"])
 @admin_bp.route("/questions/<int:id>", methods=["PUT", "DELETE"])
 @auth_required()
@@ -269,7 +265,6 @@ def manage_questions(quiz_id=None, id=None):
         if not 1 <= int(data["correct_option"]) <= 4:
             return jsonify({"error": "Correct option must be between 1 and 4"}), 400
 
-        
         quiz = Quiz.query.get_or_404(quiz_id)
 
         question = Question(
@@ -350,7 +345,6 @@ def manage_questions(quiz_id=None, id=None):
             return jsonify({"error": "Error deleting question"}), 400
 
 
-
 @admin_bp.route("/users", methods=["GET"])
 @auth_required()
 @roles_required("admin")
@@ -378,7 +372,6 @@ def list_users():
 def toggle_user_active(id):
     user = User.query.get_or_404(id)
 
-    
     from flask_security import current_user
 
     if user.id == current_user.id:
@@ -399,7 +392,6 @@ def toggle_user_active(id):
 def delete_user(id):
     user = User.query.get_or_404(id)
 
-    
     from flask_security import current_user
 
     if user.id == current_user.id:

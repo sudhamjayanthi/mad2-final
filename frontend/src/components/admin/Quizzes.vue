@@ -23,35 +23,37 @@
 				</div>
 			</div>
 
-			<!-- Update Quizzes List section -->
-			<div class="table-responsive">
-				<table class="table table-hover">
-					<thead>
-						<tr>
-							<th>ID</th>
-							<th>Subject</th>
-							<th>Chapter</th>
-							<th>Date</th>
-							<th>Duration</th>
-							<th>Actions</th>
-						</tr>
-					</thead>
-					<tbody>
-						<tr v-for="quiz in filteredQuizzes" :key="quiz.id">
-							<td>{{ quiz.id }}</td>
-							<td>{{ quiz.subject_name }}</td>
-							<td>{{ quiz.chapter_name }}</td>
-							<td>{{ formatDate(quiz.date_of_quiz) }}</td>
-							<td>{{ quiz.time_duration }}</td>
-							<td>
+			<!-- Replace table-responsive section with card grid -->
+			<div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+				<div v-for="quiz in filteredQuizzes" :key="quiz.id" class="col">
+					<div class="card h-100 shadow-sm">
+						<div class="card-body">
+							<div class="d-flex justify-content-between align-items-start mb-2">
+								<h5 class="card-title mb-0">{{ quiz.subject_name }}</h5>
+								<span class="badge bg-primary">ID: {{ quiz.id }}</span>
+							</div>
+							<h6 class="card-subtitle mb-3 text-muted">{{ quiz.chapter_name }}</h6>
+
+							<div class="mb-3">
+								<div class="d-flex align-items-center mb-2">
+									<i class="bi bi-calendar-event me-2"></i>
+									<span>{{ formatDate(quiz.date_of_quiz) }}</span>
+								</div>
+								<div class="d-flex align-items-center">
+									<i class="bi bi-clock me-2"></i>
+									<span>Duration: {{ quiz.time_duration }}</span>
+								</div>
+							</div>
+
+							<div class="d-flex gap-2 mt-auto">
 								<button
-									class="btn btn-sm btn-outline-secondary me-2"
+									class="btn btn-sm btn-outline-secondary flex-grow-1"
 									@click="manageQuestions(quiz)"
 								>
-									Manage Questions
+									<i class="bi bi-list-check me-1"></i> Questions
 								</button>
 								<button
-									class="btn btn-sm btn-outline-primary me-2"
+									class="btn btn-sm btn-outline-primary"
 									@click="editQuiz(quiz)"
 								>
 									<i class="bi bi-pencil"></i>
@@ -62,13 +64,13 @@
 								>
 									<i class="bi bi-trash"></i>
 								</button>
-							</td>
-						</tr>
-						<tr v-if="!filteredQuizzes.length">
-							<td colspan="6" class="text-center">No quizzes found</td>
-						</tr>
-					</tbody>
-				</table>
+							</div>
+						</div>
+					</div>
+				</div>
+				<div v-if="!filteredQuizzes.length" class="col-12 text-center py-5">
+					<p class="text-muted">No quizzes found</p>
+				</div>
 			</div>
 
 			<!-- Add/Edit Modal -->
@@ -281,28 +283,28 @@ export default {
 		async fetchAllData() {
 			this.loading = true;
 			try {
-				// Fetch subjects first
+				// 1. Fetch subjects
 				this.subjects = await api.get("/admin/subjects");
 
-				// Fetch chapters for each subject
+				// 2. Fetch chapters for all subjects
 				const chaptersPromises = this.subjects.map((subject) =>
 					api.get(`/admin/subjects/${subject.id}/chapters`)
 				);
 				const chaptersResults = await Promise.all(chaptersPromises);
 
-				// Flatten chapters array and add subject info
+				// Process chapters
 				this.chapters = chaptersResults.flat().map((chapter) => ({
 					...chapter,
 					subject_name: this.subjects.find((s) => s.id === chapter.subject_id)?.name,
 				}));
 
-				// Fetch quizzes for each chapter
+				// 3. Fetch quizzes for all chapters
 				const quizzesPromises = this.chapters.map((chapter) =>
 					api.get(`/admin/chapters/${chapter.id}/quizzes`)
 				);
 				const quizzesResults = await Promise.all(quizzesPromises);
 
-				// Flatten quizzes array and add chapter/subject info
+				// Process quizzes
 				this.quizzes = quizzesResults.flat().map((quiz) => {
 					const chapter = this.chapters.find((c) => c.id === quiz.chapter_id);
 					return {
@@ -352,21 +354,17 @@ export default {
 		async handleSubmit() {
 			this.loading = true;
 			try {
-				const localDate = new Date(this.formData.date_of_quiz);
-				const utcDate = new Date(
-					localDate.getTime() + localDate.getTimezoneOffset() * 60000
-				);
-
 				const formattedData = {
 					...this.formData,
-					date_of_quiz: utcDate.toISOString(),
+					// Simply use the date string as is - it's already in ISO format
+					date_of_quiz: this.formData.date_of_quiz,
 				};
 
 				if (this.isEditing) {
 					await api.put(`/admin/quizzes/${this.selectedQuiz.id}`, formattedData);
 				} else {
 					await api.post(
-						`/admin/chapters/${this.selectedQuiz.chapter_id}/quizzes`,
+						`/admin/chapters/${this.formData.chapter_id}/quizzes`,
 						formattedData
 					);
 				}
@@ -397,7 +395,7 @@ export default {
 </script>
 
 <style scoped>
-.table th {
-	background-color: #f8f9fa;
+.badge {
+	font-size: 0.8rem;
 }
 </style>

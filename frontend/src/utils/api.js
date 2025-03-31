@@ -14,11 +14,20 @@ const handleResponse = async (response) => {
 };
 
 const request = async (endpoint, options = {}) => {
-	const response = await fetch(`${BASE_URL}${endpoint}`, {
-		...options,
-		headers: getAuthHeader(),
-	});
-	return handleResponse(response);
+	try {
+		const response = await fetch(`${BASE_URL}${endpoint}`, {
+			...options,
+			headers: getAuthHeader(),
+		});
+		return handleResponse(response);
+	} catch (error) {
+		if (error instanceof TypeError && error.message === "Failed to fetch") {
+			throw new Error(
+				"Unable to connect to the server. Please check your internet connection or try again later."
+			);
+		}
+		throw error;
+	}
 };
 
 export const api = {

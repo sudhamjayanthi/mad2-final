@@ -215,6 +215,7 @@ export default {
 		showAddModal() {
 			this.isEditing = false;
 			this.formData = { name: "" };
+			this.selectedChapter = null;
 			this.modal.show();
 		},
 		editChapter(chapter) {
@@ -238,6 +239,7 @@ export default {
 				}
 				await this.fetchChapters();
 				this.modal.hide();
+				this.selectedChapter = null;
 			} catch (error) {
 				console.error("Error saving chapter:", error);
 				this.error = error.response?.data?.error || "Failed to save chapter";

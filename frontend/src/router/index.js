@@ -1,7 +1,6 @@
 import { createRouter, createWebHistory } from "vue-router";
 import Login from "../components/auth/Login.vue";
 import Register from "../components/auth/Register.vue";
-import Quiz from "@/components/user/Quiz.vue";
 
 const routes = [
 	{
@@ -26,12 +25,12 @@ const routes = [
 		meta: { requiresAuth: true, requiresAdmin: true },
 		children: [
 			{
-				path: "dashboard",
-				redirect: "/admin/subjects",
+				path: "",
+				redirect: "/admin/quizzes",
 			},
 			{
-				path: "",
-				redirect: "/admin/subjects",
+				path: "dashboard",
+				redirect: "/admin/quizzes",
 			},
 			{
 				path: "subjects",
@@ -75,15 +74,15 @@ const routes = [
 				component: () => import("../components/user/Dashboard.vue"),
 			},
 			{
-				path: "subjects", // This route might not be strictly necessary if SubjectList is always shown in Dashboard
-				name: "UserSubjects",
-				component: () => import("../components/user/SubjectList.vue"), // Or keep it nested in Dashboard
+				path: "Quizzes", // This route might not be strictly necessary if SubjectList is always shown in Dashboard
+				name: "UserQuizzes",
+				component: () => import("../components/user/Quizzes.vue"), // Or keep it nested in Dashboard
 			},
 			{
 				path: "quiz/:id",
 				name: "UserQuiz",
-				component: Quiz,
-				props: true, // Pass route params as props
+				component: () => import("../components/user/QuizAttempt.vue"),
+				meta: { requiresAuth: true },
 			},
 			{
 				path: "scores",
@@ -99,7 +98,6 @@ const router = createRouter({
 	routes,
 });
 
-// Navigation guard for authentication
 router.beforeEach((to, from, next) => {
 	const token = localStorage.getItem("token");
 	let user = null;
@@ -108,27 +106,22 @@ router.beforeEach((to, from, next) => {
 		const userStr = localStorage.getItem("user");
 		user = userStr ? JSON.parse(userStr) : null;
 	} catch (e) {
-		// If there's an error parsing user data, clear it
 		localStorage.removeItem("user");
 		localStorage.removeItem("token");
 		user = null;
 	}
 
-	// Allow access to login and register pages even when logged in
 	if ((to.path === "/login" || to.path === "/register") && token) {
-		// If user is already logged in, redirect to appropriate dashboard
 		if (user?.roles?.includes("admin")) {
 			return next("/admin");
 		}
 		return next("/user/dashboard");
 	}
 
-	// Check if route requires authentication
 	if (to.meta.requiresAuth && !token) {
 		return next("/login");
 	}
 
-	// Check if route requires admin role
 	if (to.meta.requiresAdmin && (!user || !user.roles?.includes("admin"))) {
 		return next("/user/dashboard");
 	}

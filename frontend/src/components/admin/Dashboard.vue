@@ -53,6 +53,11 @@ export default {
 		return {
 			routes: [
 				{
+					path: "/admin/quizzes",
+					name: "Quizzes",
+					icon: "bi bi-question-circle",
+				},
+				{
 					path: "/admin/subjects",
 					name: "Subjects",
 					icon: "bi bi-book",
@@ -61,11 +66,6 @@ export default {
 					path: "/admin/chapters",
 					name: "Chapters",
 					icon: "bi bi-list-check",
-				},
-				{
-					path: "/admin/quizzes",
-					name: "Quizzes",
-					icon: "bi bi-question-circle",
 				},
 				{
 					path: "/admin/users",

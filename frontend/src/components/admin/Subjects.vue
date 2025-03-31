@@ -3,9 +3,19 @@
 		<div class="card-body">
 			<div class="d-flex justify-content-between align-items-center mb-4">
 				<h5 class="card-title mb-0">Subjects</h5>
-				<button class="btn btn-primary" @click="showAddModal">
-					<i class="bi bi-plus"></i> Add Subject
-				</button>
+				<div class="d-flex gap-2">
+					<div class="col-auto">
+						<input
+							type="text"
+							class="form-control"
+							v-model="searchQuery"
+							placeholder="Search subjects..."
+						/>
+					</div>
+					<button class="btn btn-primary" @click="showAddModal">
+						<i class="bi bi-plus"></i> Add Subject
+					</button>
+				</div>
 			</div>
 
 			<!-- Subjects List -->
@@ -19,7 +29,7 @@
 						</tr>
 					</thead>
 					<tbody>
-						<tr v-for="subject in subjects" :key="subject.id">
+						<tr v-for="subject in filteredSubjects" :key="subject.id">
 							<td>{{ subject.id }}</td>
 							<td>{{ subject.name }}</td>
 							<td>
@@ -37,7 +47,7 @@
 								</button>
 							</td>
 						</tr>
-						<tr v-if="!subjects.length">
+						<tr v-if="!filteredSubjects.length">
 							<td colspan="3" class="text-center">No subjects found</td>
 						</tr>
 					</tbody>
@@ -149,6 +159,7 @@ export default {
 	data() {
 		return {
 			subjects: [],
+			searchQuery: "",
 			formData: {
 				name: "",
 			},
@@ -159,6 +170,14 @@ export default {
 			deleteModal: null,
 			error: null,
 		};
+	},
+	computed: {
+		filteredSubjects() {
+			const query = this.searchQuery.toLowerCase().trim();
+			if (!query) return this.subjects;
+
+			return this.subjects.filter((subject) => subject.name.toLowerCase().includes(query));
+		},
 	},
 	mounted() {
 		this.modal = new Modal(this.$refs.modal);

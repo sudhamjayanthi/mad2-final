@@ -15,12 +15,12 @@
 							Dashboard
 						</router-link>
 						<router-link
-							to="/user/subjects"
+							to="/user/quizzes"
 							class="nav-link"
-							:class="{ active: $route.path === '/user/subjects' }"
+							:class="{ active: $route.path === '/user/quizzes' }"
 						>
-							<i class="bi bi-book me-2"></i>
-							Subjects
+							<i class="bi bi-question-circle me-2"></i>
+							Quizzes
 						</router-link>
 						<router-link
 							to="/user/scores"
@@ -39,7 +39,7 @@
 				<div
 					class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom"
 				>
-					<h2>Quiz Master</h2>
+					<h2>Student Dashboard</h2>
 					<div class="btn-toolbar mb-2 mb-md-0">
 						<div class="d-flex gap-2">
 							<span class="text-muted me-2">Welcome, {{ userName }}!</span>
@@ -117,20 +117,26 @@
 				</div>
 			</main>
 		</div>
+		<Toast v-if="error" :message="error" type="error" @hidden="error = null" />
 	</div>
 </template>
 
 <script>
 import { api } from "@/utils/api";
+import Toast from "@/components/common/Toast.vue";
 
 export default {
 	name: "UserDashboard",
+	components: {
+		Toast,
+	},
 	data() {
 		return {
 			totalAttempts: 0,
 			averageScore: 0,
 			upcomingQuizzes: 0,
 			recentScores: [],
+			error: null,
 		};
 	},
 	computed: {
@@ -144,21 +150,25 @@ export default {
 	},
 	methods: {
 		handleLogout() {
-			localStorage.removeItem("token");
-			localStorage.removeItem("user");
-			this.$router.push("/login");
+			try {
+				localStorage.removeItem("token");
+				localStorage.removeItem("user");
+				this.$router.push("/login");
+			} catch (error) {
+				this.error = "Failed to logout";
+			}
 		},
 		async fetchDashboardData() {
 			try {
-				const stats = await api.get("/dashboard/");
+				const stats = await api.get("/user/dashboard/");
 				this.totalAttempts = stats.total_attempts;
 				this.averageScore = stats.average_score;
 				this.upcomingQuizzes = stats.available_quizzes;
 
 				const scores = await api.get("/user/scores");
-				this.recentScores = scores.slice(0, 5); // Show only last 5 attempts
+				this.recentScores = scores.slice(0, 5);
 			} catch (error) {
-				console.error("Error fetching dashboard data:", error);
+				this.error = error.response?.data?.error || "Failed to load dashboard data";
 			}
 		},
 		formatDate(isoString) {

@@ -6,6 +6,7 @@ import json
 
 user_bp = Blueprint("user", __name__)
 
+
 @user_bp.route("/dashboard", methods=["GET"])
 @auth_required()
 def get_dashboard():
@@ -127,36 +128,35 @@ def get_quiz_details(id):
 def start_quiz(id):
     quiz = Quiz.query.get_or_404(id)
 
-    # Check if quiz is expired
-    if quiz.is_expired:
+    if quiz.date_of_quiz.replace(tzinfo=timezone.utc) < datetime.now(timezone.utc):
         return jsonify({"error": "Quiz has expired"}), 400
 
-    # Get or create attempt
-    latest_attempt = quiz.get_latest_attempt(current_user.id)
+        # # Get or create attempt
+        # latest_attempt = quiz.get_latest_attempt(current_user.id)
 
-    # If there's an incomplete attempt, use it
-    if latest_attempt and not latest_attempt.is_completed:
-        score = latest_attempt
-    else:
-        # Check if user has attempts remaining
-        if not quiz.has_attempts_remaining(current_user.id):
-            return jsonify({"error": "No attempts remaining"}), 400
+        # # If there's an incomplete attempt, use it
+        # if latest_attempt and not latest_attempt.is_completed:
+        #     score = latest_attempt
+        # else:
+        #     # Check if user has attempts remaining
+        #     if not quiz.has_attempts_remaining(current_user.id):
+        #         return jsonify({"error": "No attempts remaining"}), 400
 
-        # Create new attempt
-        score = Score(
-            user_id=current_user.id,
-            quiz_id=id,
-            attempt_number=quiz.get_next_attempt_number(current_user.id),
-        )
-        db.session.add(score)
-        db.session.commit()
+    # # Create new attempt
+    # score = Score(
+    #     user_id=current_user.id,
+    #     quiz_id=id,
+    #     attempt_number=quiz.get_next_attempt_number(current_user.id),
+    # )
+    # db.session.add(score)
+    # db.session.commit()
 
     questions = Question.query.filter_by(quiz_id=id).all()
 
     return jsonify(
         {
             "quiz_id": quiz.id,
-            "attempt_number": score.attempt_number,
+            # "attempt_number": score.attempt_number,
             "time_duration": quiz.time_duration,
             "questions": [
                 {
@@ -174,10 +174,10 @@ def start_quiz(id):
 @auth_required()
 def submit_quiz(id):
     quiz = Quiz.query.get_or_404(id)
-    latest_attempt = quiz.get_latest_attempt(current_user.id)
+    # latest_attempt = quiz.get_latest_attempt(current_user.id)
 
-    if not latest_attempt or latest_attempt.is_completed:
-        return jsonify({"error": "No active quiz attempt found"}), 400
+    # if not latest_attempt or latest_attempt.is_completed:
+    #     return jsonify({"error": "No active quiz attempt found"}), 400
 
     answers = request.json.get("answers", {})
 
@@ -190,19 +190,31 @@ def submit_quiz(id):
             if answers[str(question.id)] == question.correct_option:
                 total_scored += 1
 
-    # Update attempt
-    latest_attempt.total_scored = total_scored
-    latest_attempt.total_possible = total_possible
-    latest_attempt.time_stamp_of_attempt = datetime.now(timezone.utc)
-
+    # Create and save the score record
+    score = Score(
+        user_id=current_user.id,
+        quiz_id=id,
+        total_scored=total_scored,
+        total_possible=total_possible,
+        time_stamp_of_attempt=datetime.fromisoformat(
+            request.json.get("time_stamp_of_attempt")
+        ),
+    )
+    db.session.add(score)
     db.session.commit()
+
+    # Ensure division by zero doesn't occur if total_possible is 0
+    percentage = 0
+    if total_possible > 0:
+        percentage = (total_scored / total_possible) * 100
 
     return jsonify(
         {
+            "score_id": score.id,  # Optionally return the new score ID
             "total_scored": total_scored,
             "total_possible": total_possible,
-            "percentage": (total_scored / total_possible) * 100,
-            "attempt_number": latest_attempt.attempt_number,
+            "percentage": round(percentage, 2),  # Round percentage for cleaner output
+            # "attempt_number": latest_attempt.attempt_number
         }
     )
 
@@ -210,47 +222,69 @@ def submit_quiz(id):
 @user_bp.route("/scores", methods=["GET"])
 @auth_required()
 def get_user_scores():
-    scores = Score.query.filter_by(user_id=current_user.id).all()
-    return jsonify(
-        [
+    # print(current_user.id) # Keep if useful for debugging
+    scores = (
+        Score.query.filter_by(user_id=current_user.id)
+        .order_by(Score.time_stamp_of_attempt.desc())
+        .all()
+    )  # Added ordering
+
+    scores_data = []
+    for score in scores:
+        # Assume the naive datetime from DB is UTC, make it aware
+        attempted_at_utc = score.time_stamp_of_attempt.replace(tzinfo=timezone.utc)
+
+        # Ensure division by zero doesn't occur if total_possible is 0
+        percentage = 0
+        total_possible = score.total_possible
+        if total_possible > 0:
+            percentage = round((score.total_scored / total_possible) * 100, 2)
+        else:
+            # Handle case where a quiz might have 0 questions (unlikely but safe)
+            total_possible = len(score.quiz.questions)
+            if total_possible > 0:
+                percentage = round((score.total_scored / total_possible) * 100, 2)
+
+        scores_data.append(
             {
                 "quiz_id": score.quiz_id,
-                "total_scored": score.total_scored,
-                "total_possible": score.total_possible,
-                "percentage": (score.total_scored / score.total_possible) * 100,
-                "attempted_at": score.time_stamp_of_attempt.isoformat(),
+                "total_scored": score.total_scored,  # Added scored and possible for context
+                "total_possible": total_possible,
+                "total_questions": total_possible,  # Use calculated total_possible
+                "percentage": percentage,
+                # Format the timezone-aware datetime object to ISO format (will include 'Z' or offset)
+                "attempted_at": attempted_at_utc.isoformat(),
             }
-            for score in scores
-        ]
-    )
+        )
+    return jsonify(scores_data)
 
 
-@user_bp.route("/quiz/<int:quiz_id>/summary", methods=["GET"])
-@auth_required()
-def get_quiz_score(quiz_id):
-    quiz = Quiz.query.get_or_404(quiz_id)
-    latest_attempt = quiz.get_latest_attempt(current_user.id)
+# @user_bp.route("/quiz/<int:quiz_id>/summary", methods=["GET"])
+# @auth_required()
+# def get_quiz_score(quiz_id):
+#     quiz = Quiz.query.get_or_404(quiz_id)
+#     latest_attempt = quiz.get_latest_attempt(current_user.id)
 
-    if not latest_attempt or not latest_attempt.is_completed:
-        return jsonify({"error": "No completed attempt found"}), 404
+#     if not latest_attempt or not latest_attempt.is_completed:
+#         return jsonify({"error": "No completed attempt found"}), 404
 
-    return jsonify(
-        {
-            "quiz_details": {
-                "id": quiz.id,
-                "chapter_name": quiz.chapter.name,
-                "subject_name": quiz.chapter.subject.name,
-                "date_of_quiz": quiz.date_of_quiz.isoformat(),
-                "time_duration": quiz.time_duration,
-                "max_attempts": quiz.max_attempts,
-                "attempts_used": len(quiz.get_user_attempts(current_user.id)),
-            },
-            "attempt_details": {
-                "attempt_number": latest_attempt.attempt_number,
-                "total_scored": latest_attempt.total_scored,
-                "total_possible": latest_attempt.total_possible,
-                "percentage": latest_attempt.score_percentage,
-                "attempted_at": latest_attempt.time_stamp_of_attempt.isoformat(),
-            },
-        }
-    )
+#     return jsonify(
+#         {
+#             "quiz_details": {
+#                 "id": quiz.id,
+#                 "chapter_name": quiz.chapter.name,
+#                 "subject_name": quiz.chapter.subject.name,
+#                 "date_of_quiz": quiz.date_of_quiz.isoformat(),
+#                 "time_duration": quiz.time_duration,
+#                 "max_attempts": quiz.max_attempts,
+#                 "attempts_used": len(quiz.get_user_attempts(current_user.id)),
+#             },
+#             "attempt_details": {
+#                 "attempt_number": latest_attempt.attempt_number,
+#                 "total_scored": latest_attempt.total_scored,
+#                 "total_possible": latest_attempt.total_possible,
+#                 "percentage": latest_attempt.score_percentage,
+#                 "attempted_at": latest_attempt.time_stamp_of_attempt.isoformat(),
+#             },
+#         }
+#     )

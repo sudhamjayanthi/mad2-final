@@ -13,6 +13,10 @@ from config import Config
 from routes import init_routes
 
 app = Flask(__name__)
+
+from flask_migrate import Migrate 
+migrate = Migrate(app, db) 
+
 CORS(
     app,
     resources={

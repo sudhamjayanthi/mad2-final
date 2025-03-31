@@ -3,6 +3,14 @@
 		<div class="card-body">
 			<div class="d-flex justify-content-between align-items-center mb-4">
 				<h5 class="card-title mb-0">Users</h5>
+				<div class="col-md-4">
+					<input
+						type="text"
+						class="form-control"
+						v-model="searchQuery"
+						placeholder="Search by name or email..."
+					/>
+				</div>
 			</div>
 
 			<Toast v-if="error" :message="error" type="error" @hidden="error = null" />
@@ -23,7 +31,7 @@
 						</tr>
 					</thead>
 					<tbody>
-						<tr v-for="user in users" :key="user.id">
+						<tr v-for="user in filteredUsers" :key="user.id">
 							<td>{{ user.id }}</td>
 							<td>{{ user.full_name }}</td>
 							<td>{{ user.email }}</td>
@@ -59,7 +67,7 @@
 								</div>
 							</td>
 						</tr>
-						<tr v-if="!users.length">
+						<tr v-if="!filteredUsers.length">
 							<td colspan="8" class="text-center">No users found</td>
 						</tr>
 					</tbody>
@@ -110,11 +118,24 @@ export default {
 	data() {
 		return {
 			users: [],
+			searchQuery: "",
 			loading: false,
 			selectedUser: null,
 			deleteModal: null,
 			error: null,
 		};
+	},
+	computed: {
+		filteredUsers() {
+			const query = this.searchQuery.toLowerCase().trim();
+			if (!query) return this.users;
+
+			return this.users.filter(
+				(user) =>
+					user.full_name.toLowerCase().includes(query) ||
+					user.email.toLowerCase().includes(query)
+			);
+		},
 	},
 	mounted() {
 		this.fetchUsers();
