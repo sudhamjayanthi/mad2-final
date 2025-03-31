@@ -66,17 +66,12 @@ const routes = [
 		children: [
 			{
 				path: "",
-				redirect: "/user/dashboard",
+				redirect: "/user/quizzes",
 			},
 			{
-				path: "dashboard",
-				name: "UserDashboard",
-				component: () => import("../components/user/Dashboard.vue"),
-			},
-			{
-				path: "Quizzes", // This route might not be strictly necessary if SubjectList is always shown in Dashboard
+				path: "quizzes",
 				name: "UserQuizzes",
-				component: () => import("../components/user/Quizzes.vue"), // Or keep it nested in Dashboard
+				component: () => import("../components/user/Quizzes.vue"),
 			},
 			{
 				path: "quiz/:id",

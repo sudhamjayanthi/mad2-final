@@ -19,7 +19,7 @@ class Role(db.Model, RoleMixin):
 
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(64), unique=True, nullable=False)  # email format
+    email = db.Column(db.String(64), unique=True, nullable=False)
     password = db.Column(db.String(255), nullable=False)
     full_name = db.Column(db.String(100), nullable=False)
     qualification = db.Column(db.String(100), nullable=True)
@@ -29,6 +29,7 @@ class User(db.Model, UserMixin):
         db.String(64), unique=True, nullable=False, default=lambda: str(uuid.uuid4())
     )
     created_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
+    last_login = db.Column(db.DateTime, nullable=True)
 
     roles = db.relationship(
         "Role", secondary=roles_users, backref=db.backref("users", lazy="dynamic")
@@ -48,10 +49,7 @@ class User(db.Model, UserMixin):
 class Subject(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), unique=True, nullable=False)
-    # description = db.Column(db.Text, nullable=True)
-    # created_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
 
-    # Relationships
     chapters = db.relationship("Chapter", backref="subject", lazy=True)
 
 
@@ -59,10 +57,7 @@ class Chapter(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     subject_id = db.Column(db.Integer, db.ForeignKey("subject.id"), nullable=False)
     name = db.Column(db.String(100), nullable=False)
-    # description = db.Column(db.Text, nullable=True)
-    # created_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
 
-    # Relationships
     quizzes = db.relationship("Quiz", backref="chapter", lazy=True)
 
 
@@ -70,11 +65,10 @@ class Quiz(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     chapter_id = db.Column(db.Integer, db.ForeignKey("chapter.id"), nullable=False)
     date_of_quiz = db.Column(db.DateTime, nullable=False)
-    time_duration = db.Column(db.String(5), nullable=False)  # Format: HH:MM
-    # remarks = db.Column(db.Text, nullable=True)
+    time_duration = db.Column(db.String(5), nullable=False)
+
     created_at = db.Column(db.DateTime, default=datetime.now(timezone.utc))
 
-    # Relationships
     questions = db.relationship("Question", backref="quiz", lazy=True)
     scores = db.relationship("Score", backref="quiz", lazy=True)
 

@@ -8,14 +8,17 @@ from flask_security import (
     hash_password,
 )
 from flask_cors import CORS
+from flask_mail import Mail
 from models import db, User, Role
 from config import Config
 from routes import init_routes
 
 app = Flask(__name__)
+mail = Mail()
 
-from flask_migrate import Migrate 
-migrate = Migrate(app, db) 
+from flask_migrate import Migrate
+
+migrate = Migrate(app, db)
 
 CORS(
     app,
@@ -30,6 +33,7 @@ CORS(
 app.config.from_object(Config)
 
 db.init_app(app)
+mail.init_app(app)
 user_datastore = SQLAlchemyUserDatastore(db, User, Role)
 security = Security(app, user_datastore)
 

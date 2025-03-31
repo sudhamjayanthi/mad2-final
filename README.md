@@ -20,8 +20,7 @@ Sudham Jayanthi <<23f3003060@ds.study.iitm.ac.in>>
 ## links
 [details doc](https://docs.google.com/document/d/e/2PACX-1vQPKy9dWH4FsUZZrOp8rXF-hJysrtXVz_tQs3GQp12W5Ua9mAqre9bzbzDSygaE_r5jDkuQwdBNkFzu/pub)
 
-[demo video]()
+[demo video](https://drive.google.com/drive/folders/1NiiNI3d36-Gvn-l12R36Z3WVU1nboh4Y?usp=drive_link)
 
-[project report]()
+[project report](https://docs.google.com/document/d/1Po95EecCRheM2QMMK0nnGd4rzl_Oa2Et/edit?usp=sharing&ouid=107095954077201014852&rtpof=true&sd=true)
 
-[live demo]()

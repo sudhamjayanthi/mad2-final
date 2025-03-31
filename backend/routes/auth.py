@@ -2,7 +2,7 @@ from flask import Blueprint, request, jsonify
 from flask_security import auth_required, hash_password, verify_password
 from flask_security.utils import login_user, logout_user
 from models import User, db, Role
-from datetime import datetime
+from datetime import datetime, timezone
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -21,6 +21,8 @@ def login():
             return jsonify({"message": "Your access is disabled"}), 403
 
         login_user(user)
+        user.last_login = datetime.now(timezone.utc)
+        db.session.commit()
 
         return jsonify(
             {
@@ -35,6 +37,7 @@ def login():
         ), 200
 
     return jsonify({"message": "Invalid email or password"}), 401
+
 
 @auth_bp.route("/register", methods=["POST"])
 def register():
@@ -76,6 +79,7 @@ def register():
     except Exception as e:
         db.session.rollback()
         return jsonify({"message": "Registration failed", "error": str(e)}), 500
+
 
 @auth_bp.route("/logout", methods=["POST"])
 @auth_required()

@@ -1,7 +1,8 @@
 from flask import Blueprint, request, jsonify
 from flask_security import auth_required, roles_required
-from models import Subject, Chapter, Quiz, Question, db, User
+from models import Subject, Chapter, Quiz, Question, db, User, Score
 from datetime import datetime
+from sqlalchemy import func, desc, cast, Float
 
 admin_bp = Blueprint("admin", __name__)
 
@@ -404,3 +405,54 @@ def delete_user(id):
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": "Error deleting user"}), 400
+    
+@admin_bp.route("/stats/subject-summary", methods=["GET"])
+@auth_required()
+@roles_required("admin")
+def get_subject_summary_stats():
+    try:
+        top_scores_query = db.session.query(
+            Subject.name.label('subject_name'),
+            func.max(
+                cast(Score.total_scored, Float) * 100.0 / cast(Score.total_possible, Float)
+            ).label('max_percentage')
+        ).join(Chapter, Subject.id == Chapter.subject_id)\
+        .join(Quiz, Chapter.id == Quiz.chapter_id)\
+        .join(Score, Quiz.id == Score.quiz_id)\
+        .filter(Score.total_possible > 0)\
+        .group_by(Subject.id, Subject.name)\
+        .order_by(desc('max_percentage'))
+
+        top_scores_result = top_scores_query.all()
+        
+        top_scores_data = [
+            {"subject": name, "topScore": round(score, 2) if score is not None else 0}
+            for name, score in top_scores_result
+        ]
+
+        attempts_query = db.session.query(
+            Subject.name.label('subject_name'),
+            func.count(Score.id).label('attempt_count')
+        ).select_from(Subject)\
+        .outerjoin(Chapter, Subject.id == Chapter.subject_id)\
+        .outerjoin(Quiz, Chapter.id == Quiz.chapter_id)\
+        .outerjoin(Score, Quiz.id == Score.quiz_id)\
+        .group_by(Subject.id, Subject.name)\
+        .order_by(Subject.name)
+
+        attempts_result = attempts_query.all()
+        
+        attempts_data = [
+            {"subject": name, "attempts": count}
+            for name, count in attempts_result
+        ]
+
+        return jsonify({
+            "topScores": top_scores_data,
+            "attempts": attempts_data
+        })
+
+    except Exception as e:
+        print(f"Error fetching subject summary stats: {e}")
+        db.session.rollback()
+        return jsonify({"error": "Failed to retrieve subject statistics"}), 500

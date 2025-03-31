@@ -6,14 +6,7 @@
 				<div class="position-sticky pt-3">
 					<h5 class="px-3 mb-3">Navigation</h5>
 					<div class="nav flex-column">
-						<router-link
-							to="/user/dashboard"
-							class="nav-link"
-							:class="{ active: $route.path === '/user/dashboard' }"
-						>
-							<i class="bi bi-house-door me-2"></i>
-							Dashboard
-						</router-link>
+
 						<router-link
 							to="/user/quizzes"
 							class="nav-link"
@@ -156,19 +149,6 @@ export default {
 				this.$router.push("/login");
 			} catch (error) {
 				this.error = "Failed to logout";
-			}
-		},
-		async fetchDashboardData() {
-			try {
-				const stats = await api.get("/user/dashboard/");
-				this.totalAttempts = stats.total_attempts;
-				this.averageScore = stats.average_score;
-				this.upcomingQuizzes = stats.available_quizzes;
-
-				const scores = await api.get("/user/scores");
-				this.recentScores = scores.slice(0, 5);
-			} catch (error) {
-				this.error = error.response?.data?.error || "Failed to load dashboard data";
 			}
 		},
 		formatDate(isoString) {
